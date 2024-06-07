@@ -3,21 +3,15 @@ package com.example.musala.services.events
 import com.example.musala.services.events.dtos.EventApiRequest
 import com.example.musala.services.events.dtos.EventApiResponse
 import com.example.musala.services.events.services.EventService
-import org.springframework.data.domain.Pageable
-import org.springframework.data.web.PagedResourcesAssembler
 import org.springframework.hateoas.EntityModel
 import org.springframework.hateoas.IanaLinkRelations
-import org.springframework.hateoas.PagedModel
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/events")
-class EventController(
-    private val service: EventService,
-    private val pagedResourcesAssembler: PagedResourcesAssembler<EventApiResponse>,
-) {
+class EventController(private val service: EventService) {
     @PostMapping
     fun createEvent(@RequestBody @Validated request: EventApiRequest): ResponseEntity<EntityModel<EventApiResponse>> {
         val response = service.createEvent(request)
@@ -37,18 +31,12 @@ class EventController(
     }
 
     @GetMapping
-    fun findAll(
-        @RequestParam(required = false) query: String?,
-        pageable: Pageable,
-    ): PagedModel<EntityModel<EventApiResponse>> {
+    fun findAll(@RequestParam(required = false) query: String?): List<EntityModel<EventApiResponse>> {
         val filters = EventFilters(query = query)
-        val shops = service.findAll(
-            pageable = pageable,
+        val events = service.findAll(
             filters = filters,
         )
-        return pagedResourcesAssembler.toModel(
-            shops,
-            EventAssembler(query = query),
-        )
+        val assembler = EventAssembler(query = query)
+        return assembler.toCollectionModel(events).toList()
     }
 }

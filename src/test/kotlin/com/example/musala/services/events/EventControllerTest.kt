@@ -80,7 +80,7 @@ class EventControllerTest(
             .apply { prettyPrint() }
             .then()
             .statusCode(HttpStatus.OK.value())
-            .body("_embedded.eventApiResponses.size()", equalTo(expectedCount))
+            .body("size()", equalTo(expectedCount))
     }
 
     @Nested

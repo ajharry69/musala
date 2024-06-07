@@ -8,8 +8,6 @@ import com.example.musala.services.tickets.dtos.TicketApiResponse
 import com.example.musala.services.tickets.dtos.toApiResponse
 import com.example.musala.services.tickets.dtos.toEntity
 import com.example.musala.services.tickets.repositories.TicketRepository
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -54,10 +52,9 @@ class TicketServiceImpl(
             ?: throw MusalaException(HttpStatus.NOT_FOUND, errorCode = "TICKET_NOT_FOUND")
     }
 
-    override fun findAll(eventId: Long, pageable: Pageable): Page<TicketApiResponse> {
+    override fun findAll(eventId: Long): List<TicketApiResponse> {
         return repository.findAllByEvent_IdOrderByDateCreatedAsc(
             eventId = eventId,
-            pageable = pageable,
         ).map { it.toApiResponse() }
     }
 }

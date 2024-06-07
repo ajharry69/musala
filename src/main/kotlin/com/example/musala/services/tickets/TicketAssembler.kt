@@ -1,7 +1,6 @@
 package com.example.musala.services.tickets
 
 import com.example.musala.services.tickets.dtos.TicketApiResponse
-import org.springframework.data.domain.Pageable
 import org.springframework.hateoas.EntityModel
 import org.springframework.hateoas.server.RepresentationModelAssembler
 import org.springframework.hateoas.server.mvc.linkTo
@@ -15,7 +14,7 @@ class TicketAssembler(private val eventId: Long) :
                 findById(eventId = eventId, ticketId = entity.id)
             }.withSelfRel(),
             linkTo<TicketController> {
-                findAll(eventId = eventId, pageable = Pageable.unpaged())
+                findAll(eventId = eventId)
             }.withRel("tickets"),
         )
     }

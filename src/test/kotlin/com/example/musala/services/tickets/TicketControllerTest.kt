@@ -78,7 +78,7 @@ class TicketControllerTest(
             .apply { prettyPrint() }
             .then()
             .statusCode(HttpStatus.OK.value())
-            .body("_embedded.ticketApiResponses.size()", equalTo(3))
+            .body("size()", equalTo(3))
     }
 
     @Nested

@@ -9,8 +9,6 @@ import com.example.musala.services.events.repositories.EventRepository
 import org.junit.jupiter.api.*
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
 import java.time.LocalDate
 import java.util.*
 import kotlin.test.assertContentEquals
@@ -69,19 +67,17 @@ class EventServiceImplTest {
     fun `find all`() {
         val repository = mock(EventRepository::class.java)
         val service = EventServiceImpl(repository = repository)
-        `when`(repository.findAll(any<EventSpecification>(), any<Pageable>()))
-            .thenReturn(PageImpl(listOf(EventEntity(id = 1))))
+        `when`(repository.findAll(any<EventSpecification>()))
+            .thenReturn(listOf(EventEntity(id = 1)))
 
-        val actual = service.findAll(Pageable.unpaged(), EventFilters(null))
+        val actual = service.findAll(EventFilters(null))
 
         assertAll(
             { assertEquals(1, actual.size) },
-            { assertEquals(1, actual.totalPages) },
             {
                 val specCapture = argumentCaptor<EventSpecification>()
-                val pageableCapture = argumentCaptor<Pageable>()
                 verify(repository)
-                    .findAll(specCapture.capture(), pageableCapture.capture())
+                    .findAll(specCapture.capture())
             },
         )
     }

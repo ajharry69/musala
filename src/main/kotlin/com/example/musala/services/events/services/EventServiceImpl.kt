@@ -7,8 +7,6 @@ import com.example.musala.services.events.dtos.EventApiResponse
 import com.example.musala.services.events.dtos.toApiResponse
 import com.example.musala.services.events.dtos.toEntity
 import com.example.musala.services.events.repositories.EventRepository
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -25,9 +23,9 @@ class EventServiceImpl(private val repository: EventRepository) : EventService {
             ?: throw MusalaException(HttpStatus.NOT_FOUND, errorCode = "EVENT_NOT_FOUND")
     }
 
-    override fun findAll(pageable: Pageable, filters: EventFilters): Page<EventApiResponse> {
+    override fun findAll(filters: EventFilters): List<EventApiResponse> {
         val specification = EventSpecification(filters = filters)
-        return repository.findAll(specification, pageable).map {
+        return repository.findAll(specification).map {
             it.toApiResponse()
         }
     }

@@ -3,21 +3,15 @@ package com.example.musala.services.tickets
 import com.example.musala.services.tickets.dtos.TicketApiRequest
 import com.example.musala.services.tickets.dtos.TicketApiResponse
 import com.example.musala.services.tickets.services.TicketService
-import org.springframework.data.domain.Pageable
-import org.springframework.data.web.PagedResourcesAssembler
 import org.springframework.hateoas.EntityModel
 import org.springframework.hateoas.IanaLinkRelations
-import org.springframework.hateoas.PagedModel
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/events")
-class TicketController(
-    private val service: TicketService,
-    private val pagedResourcesAssembler: PagedResourcesAssembler<TicketApiResponse>,
-) {
+class TicketController(private val service: TicketService) {
     @PostMapping("/{eventId}/tickets")
     fun reserveTicket(
         @PathVariable eventId: Long,
@@ -48,17 +42,11 @@ class TicketController(
     }
 
     @GetMapping("/{eventId}/tickets")
-    fun findAll(
-        @PathVariable eventId: Long,
-        pageable: Pageable,
-    ): PagedModel<EntityModel<TicketApiResponse>> {
-        val shops = service.findAll(
+    fun findAll(@PathVariable eventId: Long): List<EntityModel<TicketApiResponse>> {
+        val tickets = service.findAll(
             eventId = eventId,
-            pageable = pageable,
         )
-        return pagedResourcesAssembler.toModel(
-            shops,
-            TicketAssembler(eventId = eventId),
-        )
+        val assembler = TicketAssembler(eventId = eventId)
+        return assembler.toCollectionModel(tickets).toList()
     }
 }

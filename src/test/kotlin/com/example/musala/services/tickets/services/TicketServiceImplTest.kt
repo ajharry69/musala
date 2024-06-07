@@ -13,8 +13,6 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
 import java.time.LocalDate
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -228,19 +226,17 @@ class TicketServiceImplTest {
             repository = repository,
             eventService = eventService,
         )
-        `when`(repository.findAllByEvent_IdOrderByDateCreatedAsc(eventId = 1, pageable = Pageable.unpaged()))
-            .thenReturn(PageImpl(listOf(TicketEntity(id = 1))))
+        `when`(repository.findAllByEvent_IdOrderByDateCreatedAsc(eventId = 1))
+            .thenReturn(listOf(TicketEntity(id = 1)))
 
-        val actual = service.findAll(eventId = 1, pageable = Pageable.unpaged())
+        val actual = service.findAll(eventId = 1)
 
         assertAll(
             { assertEquals(1, actual.size) },
-            { assertEquals(1, actual.totalPages) },
             {
                 val eventIdCapture = argumentCaptor<Long>()
-                val pageableCapture = argumentCaptor<Pageable>()
                 verify(repository)
-                    .findAllByEvent_IdOrderByDateCreatedAsc(eventIdCapture.capture(), pageableCapture.capture())
+                    .findAllByEvent_IdOrderByDateCreatedAsc(eventIdCapture.capture())
 
                 assertContentEquals(listOf(1), eventIdCapture.allValues)
             },
