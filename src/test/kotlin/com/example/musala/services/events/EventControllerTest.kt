@@ -74,7 +74,7 @@ class EventControllerTest(
     )
     fun `find all`(query: String?, expectedCount: Int) {
         given()
-            /*.auth().preemptive().oauth2(getAccessToken())*/
+            .auth().preemptive().oauth2(getAccessToken())
             .queryParams(mapOf("query" to query))
             .get("/events")
             .apply { prettyPrint() }
@@ -98,7 +98,7 @@ class EventControllerTest(
             )
 
             given()
-                /*.auth().preemptive().oauth2(getAccessToken())*/
+                .auth().preemptive().oauth2(getAccessToken())
                 .get("/events/${event.id}")
                 .apply { prettyPrint() }
                 .then()
@@ -118,7 +118,7 @@ class EventControllerTest(
         @Test
         fun `with invalid event id`() {
             given()
-                /*.auth().preemptive().oauth2(getAccessToken())*/
+                .auth().preemptive().oauth2(getAccessToken())
                 .get("/events/111111111111111")
                 .apply { prettyPrint() }
                 .then()
@@ -135,7 +135,7 @@ class EventControllerTest(
         fun `with valid request body`(category: EventCategory) {
             val eventDate = LocalDate.now().plusWeeks(1).toString()
             given()
-                /*.auth().preemptive().oauth2(getAccessToken())*/
+                .auth().preemptive().oauth2(getAccessToken())
                 .contentType(ContentType.JSON)
                 .body(
                     """{
@@ -171,7 +171,7 @@ class EventControllerTest(
         fun `with invalid request body`(data: Pair<EventApiRequest, Int>) {
             val (request, numberOfFieldValidationErrors) = data
             given()
-                /*.auth().preemptive().oauth2(getAccessToken())*/
+                .auth().preemptive().oauth2(getAccessToken())
                 .contentType(ContentType.JSON)
                 .body(request)
                 .post("/events")

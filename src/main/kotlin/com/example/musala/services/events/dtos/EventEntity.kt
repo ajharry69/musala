@@ -24,11 +24,11 @@ class EventEntity(
     /*@CreatedBy
     @JoinColumn(updatable = false)
     @ManyToOne(cascade = [CascadeType.REMOVE])
-    var createdBy: User? = null,
+    var createdBy: UserEntity? = null,
     @LastModifiedBy
     @JoinColumn(insertable = false)
     @ManyToOne(cascade = [CascadeType.REMOVE])
-    var lastModifiedBy: User? = null,*/
+    var lastModifiedBy: UserEntity? = null,*/
     @CreatedDate
     @Column(nullable = true, updatable = false)
     var dateCreated: OffsetDateTime? = null,

@@ -73,7 +73,7 @@ class TicketControllerTest(
     @Test
     fun `find all`() {
         given()
-            /*.auth().preemptive().oauth2(getAccessToken())*/
+            .auth().preemptive().oauth2(getAccessToken())
             .get("/events/${event.id}/tickets")
             .apply { prettyPrint() }
             .then()
@@ -94,7 +94,7 @@ class TicketControllerTest(
             )
 
             given()
-                /*.auth().preemptive().oauth2(getAccessToken())*/
+                .auth().preemptive().oauth2(getAccessToken())
                 .get("/events/${event.id}/tickets/${ticket.id}")
                 .apply { prettyPrint() }
                 .then()
@@ -108,7 +108,7 @@ class TicketControllerTest(
         @Test
         fun `with invalid event id`() {
             given()
-                /*.auth().preemptive().oauth2(getAccessToken())*/
+                .auth().preemptive().oauth2(getAccessToken())
                 .get("/events/111111111111111/tickets/1234")
                 .apply { prettyPrint() }
                 .then()
@@ -119,7 +119,7 @@ class TicketControllerTest(
         @Test
         fun `with valid event id but invalid ticket id`() {
             given()
-                /*.auth().preemptive().oauth2(getAccessToken())*/
+                .auth().preemptive().oauth2(getAccessToken())
                 .get("/events/${event.id}/tickets/111111111111111")
                 .apply { prettyPrint() }
                 .then()
@@ -134,7 +134,7 @@ class TicketControllerTest(
         @Test
         fun `with valid request body`() {
             given()
-                /*.auth().preemptive().oauth2(getAccessToken())*/
+                .auth().preemptive().oauth2(getAccessToken())
                 .contentType(ContentType.JSON)
                 .body("""{"attendeesCount": 2}""")
                 .post("/events/${event.id}/tickets")
@@ -159,7 +159,7 @@ class TicketControllerTest(
         )
         fun `with invalid request body`(attendeesCount: Int, expectedStatusCode: Int, expectedErrorCode: String) {
             given()
-                /*.auth().preemptive().oauth2(getAccessToken())*/
+                .auth().preemptive().oauth2(getAccessToken())
                 .contentType(ContentType.JSON)
                 .body("""{"attendeesCount": $attendeesCount}""")
                 .post("/events/${event.id}/tickets")
