@@ -17,7 +17,10 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.*
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.ArgumentsProvider
+import org.junit.jupiter.params.provider.ArgumentsSource
+import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
@@ -67,22 +70,72 @@ class EventControllerTest(
     }
 
     @ParameterizedTest
-    @CsvSource(
-        """,3""",
-        """dev,1""",
-        """operations,1""",
-        """engineer,2""",
-        """enGinEEr,2""",
-    )
-    fun `find all`(query: String?, expectedCount: Int) {
+    @ArgumentsSource(EventFiltersProvider::class)
+    fun `find all`(data: Pair<EventFilters, Int>) {
+        val (filters, expectedCount) = data
         given()
             .auth().preemptive().oauth2(getAccessToken())
-            .queryParams(mapOf("query" to query))
+            .queryParams(
+                mapOf(
+                    "query" to filters.query,
+                    "endDate" to filters.endDate?.toString(),
+                    "startDate" to filters.startDate?.toString(),
+                    "category" to filters.category,
+                ),
+            )
             .get("/events")
             .apply { prettyPrint() }
             .then()
             .statusCode(HttpStatus.OK.value())
             .body("size()", equalTo(expectedCount))
+    }
+
+    object EventFiltersProvider : ArgumentsProvider {
+        override fun provideArguments(context: ExtensionContext): Stream<out Arguments?> {
+            return Stream.of(
+                EventFilters() to 3,
+                EventFilters(
+                    query = "",
+                ) to 3,
+                EventFilters(
+                    query = "dev",
+                ) to 1,
+                EventFilters(
+                    query = "engineer",
+                ) to 2,
+                EventFilters(
+                    query = "engineer".uppercase(),
+                ) to 2,
+                EventFilters(
+                    category = EventCategory.Conference,
+                ) to 2,
+                EventFilters(
+                    category = EventCategory.Conference,
+                    query = "operations",
+                ) to 1,
+                EventFilters(
+                    category = EventCategory.Game,
+                ) to 1,
+                EventFilters(
+                    category = EventCategory.Concert,
+                ) to 0,
+                EventFilters(
+                    startDate = LocalDate.now().plusMonths(6),
+                ) to 1,
+                EventFilters(
+                    endDate = LocalDate.now().plusMonths(6),
+                ) to 2,
+                EventFilters(
+                    endDate = LocalDate.now().plusMonths(6),
+                    category = EventCategory.Game,
+                ) to 1,
+                EventFilters(
+                    endDate = LocalDate.now().plusMonths(6),
+                    category = EventCategory.Game,
+                    query = "event",
+                ) to 0,
+            ).map(Arguments::of)
+        }
     }
 
     @Nested
@@ -111,7 +164,10 @@ class EventControllerTest(
                 .body("date", notNullValue())
                 .body("description", notNullValue())
                 .body("availableAttendeesCount", greaterThan(0))
-                .body("_links.events.href", allOf(startsWith("http"), endsWith("/events{?query}")))
+                .body(
+                    "_links.events.href",
+                    allOf(startsWith("http"), endsWith("/events{?query,startDate,endDate,category}"))
+                )
                 .body("_links.tickets.href", allOf(startsWith("http"), endsWith("/tickets")))
                 .body("_links.reserveTicket.href", allOf(startsWith("http"), endsWith("/tickets")))
                 .body("_links.self.href", allOf(startsWith("http")))
@@ -158,7 +214,10 @@ class EventControllerTest(
                 .body("date", equalTo(eventDate))
                 .body("description", equalTo("Test description"))
                 .body("availableAttendeesCount", equalTo(100))
-                .body("_links.events.href", allOf(startsWith("http"), endsWith("/events{?query}")))
+                .body(
+                    "_links.events.href",
+                    allOf(startsWith("http"), endsWith("/events{?query,startDate,endDate,category}"))
+                )
                 .body("_links.tickets.href", allOf(startsWith("http"), endsWith("/tickets")))
                 .body("_links.reserveTicket.href", allOf(startsWith("http"), endsWith("/tickets")))
                 .body("_links.self.href", allOf(startsWith("http")))

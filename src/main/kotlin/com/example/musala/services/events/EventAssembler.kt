@@ -6,7 +6,7 @@ import org.springframework.hateoas.EntityModel
 import org.springframework.hateoas.server.RepresentationModelAssembler
 import org.springframework.hateoas.server.mvc.linkTo
 
-class EventAssembler(private val query: String? = null) :
+class EventAssembler(private val filters: EventFilters = EventFilters()) :
     RepresentationModelAssembler<EventApiResponse, EntityModel<EventApiResponse>> {
     override fun toModel(entity: EventApiResponse): EntityModel<EventApiResponse> {
         return EntityModel.of(
@@ -15,7 +15,12 @@ class EventAssembler(private val query: String? = null) :
                 findById(eventId = entity.id)
             }.withSelfRel(),
             linkTo<EventController> {
-                findAll(query = query)
+                findAll(
+                    query = filters.query,
+                    startDate = filters.startDate,
+                    endDate = filters.endDate,
+                    category = filters.category,
+                )
             }.withRel("events"),
             linkTo<TicketController> {
                 findAll(eventId = entity.id)

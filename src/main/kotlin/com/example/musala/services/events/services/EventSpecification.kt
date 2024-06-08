@@ -1,6 +1,7 @@
 package com.example.musala.services.events.services
 
 import com.example.musala.services.events.EventFilters
+import com.example.musala.services.events.dtos.EventCategory
 import com.example.musala.services.events.dtos.EventEntity
 import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
@@ -31,6 +32,33 @@ class EventSpecification(private val filters: EventFilters) : Specification<Even
                         "%$queryLower%",
                     ),
                 ).let(::add)
+            }
+
+            filters.category?.let {
+                add(
+                    criteriaBuilder.equal(
+                        root.get<EventCategory>("category"),
+                        it
+                    )
+                )
+            }
+
+            filters.startDate?.let {
+                add(
+                    criteriaBuilder.greaterThanOrEqualTo(
+                        root.get("date"),
+                        it
+                    )
+                )
+            }
+
+            filters.endDate?.let {
+                add(
+                    criteriaBuilder.lessThanOrEqualTo(
+                        root.get("date"),
+                        it
+                    )
+                )
             }
         }
         return criteriaBuilder.and(*predicates.toTypedArray())

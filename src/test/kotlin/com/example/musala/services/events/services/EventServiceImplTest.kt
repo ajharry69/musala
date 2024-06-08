@@ -70,7 +70,7 @@ class EventServiceImplTest {
         `when`(repository.findAll(any<EventSpecification>()))
             .thenReturn(listOf(EventEntity(id = 1)))
 
-        val actual = service.findAll(EventFilters(null))
+        val actual = service.findAll(EventFilters())
 
         assertAll(
             { assertEquals(1, actual.size) },
