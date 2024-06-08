@@ -1,42 +1,40 @@
 package com.example.musala
 
-import io.restassured.RestAssured.given
-import io.restassured.http.ContentType
+import com.example.musala.services.auth.services.JwtServiceImpl
+import com.example.musala.services.users.dtos.UserEntity
+import com.example.musala.services.users.repositories.UserRepository
 import org.junit.jupiter.api.BeforeAll
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.lifecycle.Startables
-import org.testcontainers.utility.MountableFile
 
-abstract class BaseIntegrationTest {
+abstract class BaseIntegrationTest(private val userRepository: UserRepository) {
+    protected fun getOrCreateUser(email: String, password: String, name: String = "Test"): UserEntity {
+        return userRepository.findByEmail(email = email) ?: userRepository.save(
+            UserEntity(
+                name = name,
+                email = email,
+                encodedPassword = BCryptPasswordEncoder().encode(password),
+            )
+        )
+    }
+
     protected fun getAccessToken(
         email: String = "test@example.org",
         password: String = "password",
     ): String {
-        return given()
-            .contentType(ContentType.JSON)
-            .body(
-                mapOf(
-                    "email" to email,
-                    "password" to password,
-                )
-            )
-            .apply { log() }
-            .post("/auth")
-            .apply { prettyPrint() }
-            .then().assertThat().statusCode(200)
-            .extract().path("accessToken")
+        val user = getOrCreateUser(email = email, password = password)
+        return JwtServiceImpl(
+            secretKey = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970",
+            jwtExpiration = 3_600_000,
+        ).generateToken(user)
     }
 
     companion object {
         @JvmStatic
-        val postgresContainer = Containers.POSTGRESQL_CONTAINER.apply {
-            withCopyFileToContainer(
-                MountableFile.forClasspathResource("test.sql"),
-                "/docker-entrypoint-initdb.d/test.sql"
-            )
-        }
+        val postgresContainer = Containers.POSTGRESQL_CONTAINER
 
         init {
             Startables.deepStart(

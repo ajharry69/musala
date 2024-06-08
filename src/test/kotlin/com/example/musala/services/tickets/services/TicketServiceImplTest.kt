@@ -226,7 +226,7 @@ class TicketServiceImplTest {
             repository = repository,
             eventService = eventService,
         )
-        `when`(repository.findAllByEvent_IdOrderByDateCreatedAsc(eventId = 1))
+        `when`(repository.findAllByEvent_IdOrderByDateReservedAsc(eventId = 1))
             .thenReturn(listOf(TicketEntity(id = 1)))
 
         val actual = service.findAll(eventId = 1)
@@ -236,7 +236,7 @@ class TicketServiceImplTest {
             {
                 val eventIdCapture = argumentCaptor<Long>()
                 verify(repository)
-                    .findAllByEvent_IdOrderByDateCreatedAsc(eventIdCapture.capture())
+                    .findAllByEvent_IdOrderByDateReservedAsc(eventIdCapture.capture())
 
                 assertContentEquals(listOf(1), eventIdCapture.allValues)
             },

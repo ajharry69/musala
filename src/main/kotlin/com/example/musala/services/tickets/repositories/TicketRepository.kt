@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface TicketRepository : JpaRepository<TicketEntity, Long> {
 
-    fun findAllByEvent_IdOrderByDateCreatedAsc(eventId: Long): List<TicketEntity>
+    fun findAllByEvent_IdOrderByDateReservedAsc(eventId: Long): List<TicketEntity>
 
 
     fun findByEvent_IdAndId(eventId: Long, ticketId: Long): TicketEntity?

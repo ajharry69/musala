@@ -5,6 +5,7 @@ import com.example.musala.services.events.dtos.EventApiRequest
 import com.example.musala.services.events.dtos.EventCategory
 import com.example.musala.services.events.dtos.EventEntity
 import com.example.musala.services.events.repositories.EventRepository
+import com.example.musala.services.users.repositories.UserRepository
 import io.restassured.RestAssured
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
@@ -28,7 +29,8 @@ import java.util.stream.Stream
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 class EventControllerTest(
     @Autowired private val repository: EventRepository,
-) : BaseIntegrationTest() {
+    @Autowired private val userRepository: UserRepository,
+) : BaseIntegrationTest(userRepository = userRepository) {
 
     @BeforeEach
     fun setUp() {

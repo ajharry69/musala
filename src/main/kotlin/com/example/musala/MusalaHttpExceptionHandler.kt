@@ -6,6 +6,7 @@ import org.springframework.hateoas.mediatype.problem.Problem
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -32,6 +33,25 @@ object MusalaHttpExceptionHandler {
             .withInstance(URI.create(request.requestURI))
 
         return ResponseEntity.status(exception.statusCode)
+            .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+            .body(problem)
+    }
+
+    @ResponseBody
+    @ExceptionHandler(AuthenticationException::class)
+    operator fun invoke(exception: AuthenticationException, request: HttpServletRequest): ResponseEntity<Problem> {
+        val problem = Problem.create()
+            .withStatus(HttpStatus.UNAUTHORIZED)
+            .withProperties(
+                buildMap {
+                    put("timestamp", Instant.now())
+                    put("errorCode", "AUTHENTICATION_ERROR")
+                },
+            )
+            .withDetail(exception.localizedMessage)
+            .withInstance(URI.create(request.requestURI))
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
             .body(problem)
     }

@@ -7,6 +7,7 @@ import com.example.musala.services.events.dtos.EventEntity
 import com.example.musala.services.events.repositories.EventRepository
 import com.example.musala.services.tickets.dtos.TicketEntity
 import com.example.musala.services.tickets.repositories.TicketRepository
+import com.example.musala.services.users.repositories.UserRepository
 import io.restassured.RestAssured
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
@@ -29,7 +30,8 @@ import java.time.LocalDate
 class TicketControllerTest(
     @Autowired private val repository: TicketRepository,
     @Autowired private val eventRepository: EventRepository,
-) : BaseIntegrationTest() {
+    @Autowired private val userRepository: UserRepository,
+) : BaseIntegrationTest(userRepository = userRepository) {
     lateinit var event: EventEntity
 
     @BeforeEach

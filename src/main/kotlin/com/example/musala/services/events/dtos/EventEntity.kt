@@ -1,7 +1,10 @@
 package com.example.musala.services.events.dtos
 
+import com.example.musala.services.users.dtos.UserEntity
 import jakarta.persistence.*
+import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.LastModifiedBy
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.LocalDate
@@ -20,15 +23,16 @@ class EventEntity(
     var date: LocalDate = LocalDate.now(),
     var availableAttendeesCount: Int = 1,
     var description: String = "",
+    @Enumerated(value = EnumType.STRING)
     var category: EventCategory = EventCategory.Concert,
-    /*@CreatedBy
+    @CreatedBy
     @JoinColumn(updatable = false)
     @ManyToOne(cascade = [CascadeType.REMOVE])
     var createdBy: UserEntity? = null,
     @LastModifiedBy
     @JoinColumn(insertable = false)
     @ManyToOne(cascade = [CascadeType.REMOVE])
-    var lastModifiedBy: UserEntity? = null,*/
+    var lastModifiedBy: UserEntity? = null,
     @CreatedDate
     @Column(nullable = true, updatable = false)
     var dateCreated: OffsetDateTime? = null,

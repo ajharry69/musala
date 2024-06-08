@@ -2,6 +2,7 @@ package com.example.musala.services.users
 
 import com.example.musala.BaseIntegrationTest
 import com.example.musala.services.users.dtos.UserApiRequest
+import com.example.musala.services.users.repositories.UserRepository
 import io.restassured.RestAssured
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
@@ -16,13 +17,16 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.ArgumentsProvider
 import org.junit.jupiter.params.provider.ArgumentsSource
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpStatus
 import java.util.stream.Stream
 import kotlin.random.Random
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class UserControllerTest : BaseIntegrationTest() {
+class UserControllerTest(
+    @Autowired private val userRepository: UserRepository,
+) : BaseIntegrationTest(userRepository = userRepository) {
 
     @BeforeEach
     fun setUp() {

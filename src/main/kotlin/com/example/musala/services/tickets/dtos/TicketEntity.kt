@@ -1,9 +1,10 @@
 package com.example.musala.services.tickets.dtos
 
 import com.example.musala.services.events.dtos.EventEntity
+import com.example.musala.services.users.dtos.UserEntity
 import jakarta.persistence.*
+import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.annotation.CreatedDate
-import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.OffsetDateTime
 
@@ -19,18 +20,11 @@ class TicketEntity(
     var attendeesCount: Int = 1,
     @ManyToOne(optional = false, cascade = [CascadeType.REMOVE])
     var event: EventEntity? = null,
-    /*@CreatedBy
+    @CreatedBy
     @JoinColumn(updatable = false)
     @ManyToOne(cascade = [CascadeType.REMOVE])
-    var createdBy: User? = null,
-    @LastModifiedBy
-    @JoinColumn(insertable = false)
-    @ManyToOne(cascade = [CascadeType.REMOVE])
-    var lastModifiedBy: User? = null,*/
+    var reservedBy: UserEntity? = null,
     @CreatedDate
     @Column(nullable = true, updatable = false)
-    var dateCreated: OffsetDateTime? = null,
-    @LastModifiedDate
-    @Column(insertable = false)
-    var dateLastModified: OffsetDateTime? = null,
+    var dateReserved: OffsetDateTime? = null,
 )

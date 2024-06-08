@@ -53,7 +53,7 @@ class TicketServiceImpl(
     }
 
     override fun findAll(eventId: Long): List<TicketApiResponse> {
-        return repository.findAllByEvent_IdOrderByDateCreatedAsc(
+        return repository.findAllByEvent_IdOrderByDateReservedAsc(
             eventId = eventId,
         ).map { it.toApiResponse() }
     }

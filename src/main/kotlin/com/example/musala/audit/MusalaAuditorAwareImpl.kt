@@ -1,8 +1,6 @@
 package com.example.musala.audit
 
-/*import com.example.musala.services.users.dtos.UserEntity
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.example.musala.services.users.dtos.UserEntity
 import org.springframework.data.domain.AuditorAware
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
@@ -21,16 +19,8 @@ class MusalaAuditorAwareImpl : AuditorAware<UserEntity> {
             authentication is AnonymousAuthenticationToken
         ) return Optional.empty()
 
-        val user = authentication.principal as? UserEntity
-        if (user == null) {
-            logger.warn("Authentication object cannot be converted to `UserEntity`")
-            return Optional.empty()
-        }
+        val user = authentication.principal as UserEntity
 
         return Optional.of(user)
     }
-
-    companion object {
-        private val logger: Logger = LoggerFactory.getLogger(MusalaAuditorAwareImpl::class.java.simpleName)
-    }
-}*/
+}
