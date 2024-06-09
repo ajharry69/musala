@@ -9,9 +9,11 @@ import com.example.musala.services.events.repositories.EventRepository
 import org.junit.jupiter.api.*
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.util.*
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -72,7 +74,7 @@ class EventServiceImplTest {
     fun `find all`() {
         val repository = mock(EventRepository::class.java)
         val service = EventServiceImpl(repository = repository)
-        `when`(repository.findAll(any<EventSpecification>()))
+        `when`(repository.findAll(any<EventSpecification>(), any<Sort>()))
             .thenReturn(listOf(EventEntity(id = 1)))
 
         val actual = service.findAll(EventFilters())
@@ -81,8 +83,11 @@ class EventServiceImplTest {
             { assertEquals(1, actual.size) },
             {
                 val specCapture = argumentCaptor<EventSpecification>()
+                val sortCapture = argumentCaptor<Sort>()
                 verify(repository)
-                    .findAll(specCapture.capture())
+                    .findAll(specCapture.capture(), sortCapture.capture())
+
+                assertContentEquals(listOf(Sort.by(Sort.Order.asc("date"))), sortCapture.allValues)
             },
         )
     }
