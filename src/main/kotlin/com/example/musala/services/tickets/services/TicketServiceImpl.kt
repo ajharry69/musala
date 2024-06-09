@@ -4,7 +4,10 @@ import com.example.musala.MusalaException
 import com.example.musala.services.events.dtos.EventEntity
 import com.example.musala.services.events.repositories.EventRepository
 import com.example.musala.services.tickets.TicketStatus
-import com.example.musala.services.tickets.dtos.*
+import com.example.musala.services.tickets.dtos.TicketApiRequest
+import com.example.musala.services.tickets.dtos.TicketApiResponse
+import com.example.musala.services.tickets.dtos.toApiResponse
+import com.example.musala.services.tickets.dtos.toEntity
 import com.example.musala.services.tickets.repositories.TicketRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service

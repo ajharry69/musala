@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS users
 (
     id                 UUID PRIMARY KEY,
-    name     VARCHAR(100) NOT NULL,
-    email    VARCHAR(250) NOT NULL UNIQUE,
-    password VARCHAR(500) NOT NULL,
+    name               VARCHAR(100) NOT NULL,
+    email              VARCHAR(250) NOT NULL UNIQUE,
+    password           VARCHAR(500) NOT NULL,
     date_created       TIMESTAMP WITH TIME ZONE,
     date_last_modified TIMESTAMP WITH TIME ZONE
 );

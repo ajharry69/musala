@@ -29,6 +29,13 @@ To run the application, a few things are needed:
 ./gradlew bootTestRun
 ```
 
+#### Additional endpoints
+
+| Endpoint                                      | Description                                             |
+|-----------------------------------------------|---------------------------------------------------------|
+| `/events/reserved-by-me`                      | Get events reserved by the currently signed in account. |
+| `/events/{eventId}/tickets/{ticketId}/cancel` | Cancel reserved ticket.                                 |
+
 ---
 
 :scroll: **START**
