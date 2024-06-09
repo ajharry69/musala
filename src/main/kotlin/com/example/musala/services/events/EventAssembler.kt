@@ -25,9 +25,10 @@ class EventAssembler(private val filters: EventFilters = EventFilters()) :
             linkTo<TicketController> {
                 findAll(eventId = entity.id)
             }.withRel("tickets"),
+        ).addIf(entity.availableAttendeesCount > 0) {
             linkTo<TicketController> {
                 reserveTicket(eventId = entity.id)
-            }.withRel("reserveTicket"),
-        )
+            }.withRel("reserve-ticket")
+        }
     }
 }

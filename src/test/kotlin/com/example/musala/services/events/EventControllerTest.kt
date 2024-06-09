@@ -149,6 +149,7 @@ class EventControllerTest(
                     description = "Test description for Musala Engineering event.",
                     date = LocalDate.now().plusMonths(5),
                     category = EventCategory.Conference,
+                    availableAttendeesCount = 290,
                 )
             )
 
@@ -158,18 +159,51 @@ class EventControllerTest(
                 .apply { prettyPrint() }
                 .then()
                 .statusCode(HttpStatus.OK.value())
-                .body("id", greaterThan(0))
-                .body("name", notNullValue())
-                .body("category", notNullValue())
+                .body("id", equalTo(event.id!!.toInt()))
+                .body("name", equalTo("Musala Engineering"))
+                .body("category", equalTo("Conference"))
                 .body("date", notNullValue())
-                .body("description", notNullValue())
-                .body("availableAttendeesCount", greaterThan(0))
+                .body("description", equalTo("Test description for Musala Engineering event."))
+                .body("availableAttendeesCount", equalTo(290))
                 .body(
                     "_links.events.href",
                     allOf(startsWith("http"), endsWith("/events{?query,startDate,endDate,category}"))
                 )
                 .body("_links.tickets.href", allOf(startsWith("http"), endsWith("/tickets")))
-                .body("_links.reserveTicket.href", allOf(startsWith("http"), endsWith("/tickets")))
+                .body("_links.reserve-ticket.href", allOf(startsWith("http"), endsWith("/tickets")))
+                .body("_links.self.href", allOf(startsWith("http")))
+        }
+
+        @Test
+        fun `should hide reserveTicket link if available attendees count is zero`() {
+            val event = repository.save(
+                EventEntity(
+                    name = "Musala Engineering",
+                    description = "Test description for Musala Engineering event.",
+                    date = LocalDate.now().plusMonths(5),
+                    category = EventCategory.Conference,
+                    availableAttendeesCount = 0,
+                )
+            )
+
+            given()
+                .auth().preemptive().oauth2(getAccessToken())
+                .get("/events/${event.id}")
+                .apply { prettyPrint() }
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("id", equalTo(event.id!!.toInt()))
+                .body("name", equalTo("Musala Engineering"))
+                .body("category", equalTo("Conference"))
+                .body("date", notNullValue())
+                .body("description", equalTo("Test description for Musala Engineering event."))
+                .body("availableAttendeesCount", equalTo(0))
+                .body(
+                    "_links.events.href",
+                    allOf(startsWith("http"), endsWith("/events{?query,startDate,endDate,category}"))
+                )
+                .body("_links.tickets.href", allOf(startsWith("http"), endsWith("/tickets")))
+                .body("_links.reserve-ticket.href", nullValue())
                 .body("_links.self.href", allOf(startsWith("http")))
         }
 
@@ -219,7 +253,7 @@ class EventControllerTest(
                     allOf(startsWith("http"), endsWith("/events{?query,startDate,endDate,category}"))
                 )
                 .body("_links.tickets.href", allOf(startsWith("http"), endsWith("/tickets")))
-                .body("_links.reserveTicket.href", allOf(startsWith("http"), endsWith("/tickets")))
+                .body("_links.reserve-ticket.href", allOf(startsWith("http"), endsWith("/tickets")))
                 .body("_links.self.href", allOf(startsWith("http")))
                 .header(HttpHeaders.LOCATION, allOf(startsWith("http")))
 
