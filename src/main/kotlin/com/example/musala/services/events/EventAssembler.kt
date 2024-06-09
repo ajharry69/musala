@@ -22,6 +22,14 @@ class EventAssembler(private val filters: EventFilters = EventFilters()) :
                     category = filters.category,
                 )
             }.withRel("events"),
+            linkTo<EventController> {
+                findEventsReservedByMe(
+                    query = filters.query,
+                    startDate = filters.startDate,
+                    endDate = filters.endDate,
+                    category = filters.category,
+                )
+            }.withRel("events-reserved-by-me"),
             linkTo<TicketController> {
                 findAll(eventId = entity.id)
             }.withRel("tickets"),

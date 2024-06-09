@@ -1,5 +1,6 @@
 package com.example.musala.services.events
 
+import com.example.musala.services.auth.CurrentlySignedInUser
 import com.example.musala.services.events.dtos.EventApiRequest
 import com.example.musala.services.events.dtos.EventApiResponse
 import com.example.musala.services.events.dtos.EventCategory
@@ -13,7 +14,7 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("/events")
-class EventController(private val service: EventService) {
+class EventController(private val service: EventService, private val signedInUser: CurrentlySignedInUser) {
     @PostMapping
     fun createEvent(@RequestBody @Validated request: EventApiRequest): ResponseEntity<EntityModel<EventApiResponse>> {
         val response = service.createEvent(request)
@@ -44,6 +45,27 @@ class EventController(private val service: EventService) {
             category = category,
             startDate = startDate,
             endDate = endDate,
+        )
+        val events = service.findAll(
+            filters = filters,
+        )
+        val assembler = EventAssembler(filters = filters)
+        return assembler.toCollectionModel(events).toList()
+    }
+
+    @GetMapping("/reserved-by-me")
+    fun findEventsReservedByMe(
+        @RequestParam(required = false) query: String?,
+        @RequestParam(required = false) startDate: LocalDate?,
+        @RequestParam(required = false) endDate: LocalDate?,
+        @RequestParam(required = false) category: EventCategory?,
+    ): List<EntityModel<EventApiResponse>> {
+        val filters = EventFilters(
+            query = query,
+            category = category,
+            startDate = startDate,
+            endDate = endDate,
+            reservedById = signedInUser.get().id,
         )
         val events = service.findAll(
             filters = filters,

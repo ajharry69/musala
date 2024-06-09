@@ -11,7 +11,11 @@ import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.lifecycle.Startables
 
 abstract class BaseIntegrationTest(private val userRepository: UserRepository) {
-    protected fun getOrCreateUser(email: String, password: String, name: String = "Test"): UserEntity {
+    protected fun getOrCreateUser(
+        email: String = DEFAULT_EMAIL,
+        password: String = DEFAULT_PASSWORD,
+        name: String = "Test"
+    ): UserEntity {
         return userRepository.findByEmail(email = email) ?: userRepository.save(
             UserEntity(
                 name = name,
@@ -22,8 +26,8 @@ abstract class BaseIntegrationTest(private val userRepository: UserRepository) {
     }
 
     protected fun getAccessToken(
-        email: String = "test@example.org",
-        password: String = "password",
+        email: String = DEFAULT_EMAIL,
+        password: String = DEFAULT_PASSWORD,
     ): String {
         val user = getOrCreateUser(email = email, password = password)
         return JwtServiceImpl(
@@ -33,6 +37,8 @@ abstract class BaseIntegrationTest(private val userRepository: UserRepository) {
     }
 
     companion object {
+        private const val DEFAULT_EMAIL = "test@example.org"
+        private const val DEFAULT_PASSWORD = "password"
         @JvmStatic
         val postgresContainer = Containers.POSTGRESQL_CONTAINER
 

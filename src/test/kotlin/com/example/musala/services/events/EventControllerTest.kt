@@ -5,6 +5,8 @@ import com.example.musala.services.events.dtos.EventApiRequest
 import com.example.musala.services.events.dtos.EventCategory
 import com.example.musala.services.events.dtos.EventEntity
 import com.example.musala.services.events.repositories.EventRepository
+import com.example.musala.services.tickets.dtos.TicketEntity
+import com.example.musala.services.tickets.repositories.TicketRepository
 import com.example.musala.services.users.repositories.UserRepository
 import io.restassured.RestAssured
 import io.restassured.RestAssured.given
@@ -33,6 +35,7 @@ import java.util.stream.Stream
 class EventControllerTest(
     @Autowired private val repository: EventRepository,
     @Autowired private val userRepository: UserRepository,
+    @Autowired private val ticketRepository: TicketRepository,
 ) : BaseIntegrationTest(userRepository = userRepository) {
 
     @BeforeEach
@@ -41,12 +44,22 @@ class EventControllerTest(
 
         repository.deleteAll()
 
-        repository.save(
+        val event = repository.save(
             EventEntity(
                 name = "Musala Engineering",
                 description = "Test description for Musala Engineering event.",
                 date = LocalDate.now().plusMonths(5),
                 category = EventCategory.Conference,
+                availableAttendeesCount = 100,
+            )
+        )
+
+        val reservedBy = getOrCreateUser()
+        ticketRepository.save(
+            TicketEntity(
+                attendeesCount = 50,
+                reservedBy = reservedBy,
+                event = event,
             )
         )
 
@@ -67,6 +80,31 @@ class EventControllerTest(
                 category = EventCategory.Game,
             )
         )
+    }
+
+    @Nested
+    @DisplayName("GET - /events/reserved-by-me")
+    inner class FindEventsReservedByMe {
+        @Test
+        fun `when results is not empty`() {
+            given()
+                .auth().preemptive().oauth2(getAccessToken())
+                .get("/events/reserved-by-me")
+                .apply { prettyPrint() }
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("size()", equalTo(1))
+        }
+
+        @Test
+        fun `when results is empty`() {
+            given()
+                .auth().preemptive().oauth2(getAccessToken(email = "new.user@example.com", password = "new.user"))
+                .get("/events/reserved-by-me")
+                .apply { prettyPrint() }
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value())
+        }
     }
 
     @ParameterizedTest
@@ -117,9 +155,6 @@ class EventControllerTest(
                     category = EventCategory.Game,
                 ) to 1,
                 EventFilters(
-                    category = EventCategory.Concert,
-                ) to 0,
-                EventFilters(
                     startDate = LocalDate.now().plusMonths(6),
                 ) to 1,
                 EventFilters(
@@ -129,11 +164,6 @@ class EventControllerTest(
                     endDate = LocalDate.now().plusMonths(6),
                     category = EventCategory.Game,
                 ) to 1,
-                EventFilters(
-                    endDate = LocalDate.now().plusMonths(6),
-                    category = EventCategory.Game,
-                    query = "event",
-                ) to 0,
             ).map(Arguments::of)
         }
     }

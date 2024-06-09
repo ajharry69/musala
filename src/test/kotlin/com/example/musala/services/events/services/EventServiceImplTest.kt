@@ -70,25 +70,46 @@ class EventServiceImplTest {
         }
     }
 
-    @Test
-    fun `find all`() {
-        val repository = mock(EventRepository::class.java)
-        val service = EventServiceImpl(repository = repository)
-        `when`(repository.findAll(any<EventSpecification>(), any<Sort>()))
-            .thenReturn(listOf(EventEntity(id = 1)))
+    @Nested
+    @DisplayName("findAll")
+    inner class FindAll {
+        @Test
+        fun `should return non-empty results`() {
+            val repository = mock(EventRepository::class.java)
+            val service = EventServiceImpl(repository = repository)
+            `when`(repository.findAll(any<EventSpecification>(), any<Sort>()))
+                .thenReturn(listOf(EventEntity(id = 1)))
 
-        val actual = service.findAll(EventFilters())
+            val actual = service.findAll(EventFilters())
 
-        assertAll(
-            { assertEquals(1, actual.size) },
-            {
-                val specCapture = argumentCaptor<EventSpecification>()
-                val sortCapture = argumentCaptor<Sort>()
-                verify(repository)
-                    .findAll(specCapture.capture(), sortCapture.capture())
+            assertAll(
+                { assertEquals(1, actual.size) },
+                {
+                    val specCapture = argumentCaptor<EventSpecification>()
+                    val sortCapture = argumentCaptor<Sort>()
+                    verify(repository)
+                        .findAll(specCapture.capture(), sortCapture.capture())
 
-                assertContentEquals(listOf(Sort.by(Sort.Order.asc("date"))), sortCapture.allValues)
-            },
-        )
+                    assertContentEquals(listOf(Sort.by(Sort.Order.asc("date"))), sortCapture.allValues)
+                },
+            )
+        }
+
+        @Test
+        fun `should throw exception if empty`() {
+            val repository = mock(EventRepository::class.java)
+            val service = EventServiceImpl(repository = repository)
+            `when`(repository.findAll(any<EventSpecification>(), any<Sort>()))
+                .thenReturn(emptyList())
+
+            val error = assertThrows<MusalaException> {
+                service.findAll(EventFilters())
+            }
+
+            assertAll(
+                { assertEquals("EMPTY_EVENTS", error.errorCode) },
+                { assertEquals(HttpStatus.NOT_FOUND, error.statusCode) },
+            )
+        }
     }
 }

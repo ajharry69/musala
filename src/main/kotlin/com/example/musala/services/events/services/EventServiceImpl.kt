@@ -26,8 +26,14 @@ class EventServiceImpl(private val repository: EventRepository) : EventService {
 
     override fun findAll(filters: EventFilters): List<EventApiResponse> {
         val specification = EventSpecification(filters = filters)
-        return repository.findAll(specification, Sort.by(Sort.Order.asc("date"))).map {
+        val responses = repository.findAll(specification, Sort.by(Sort.Order.asc("date"))).map {
             it.toApiResponse()
         }
+
+        if (responses.isEmpty()) {
+            throw MusalaException(HttpStatus.NOT_FOUND, errorCode = "EMPTY_EVENTS")
+        }
+
+        return responses
     }
 }

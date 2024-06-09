@@ -1,5 +1,6 @@
 package com.example.musala.services.events.dtos
 
+import com.example.musala.services.tickets.dtos.TicketEntity
 import com.example.musala.services.users.dtos.UserEntity
 import jakarta.persistence.*
 import org.springframework.data.annotation.CreatedBy
@@ -39,4 +40,6 @@ class EventEntity(
     @LastModifiedDate
     @Column(insertable = false)
     var dateLastModified: OffsetDateTime? = null,
+    @OneToMany(mappedBy = "event", cascade = [CascadeType.REMOVE])
+    var tickets: Set<TicketEntity> = emptySet(),
 )
