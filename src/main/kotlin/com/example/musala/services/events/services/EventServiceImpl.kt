@@ -29,11 +29,4 @@ class EventServiceImpl(private val repository: EventRepository) : EventService {
             it.toApiResponse()
         }
     }
-
-    override fun updateAvailableAttendeesCountById(eventId: Long, availableAttendeesCount: Int) {
-        repository.updateAvailableAttendeesCountById(
-            availableAttendeesCount = availableAttendeesCount,
-            eventId = eventId,
-        )
-    }
 }

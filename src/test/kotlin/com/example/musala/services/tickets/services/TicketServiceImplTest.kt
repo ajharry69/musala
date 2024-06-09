@@ -1,9 +1,9 @@
 package com.example.musala.services.tickets.services
 
 import com.example.musala.MusalaException
-import com.example.musala.services.events.dtos.EventApiResponse
 import com.example.musala.services.events.dtos.EventCategory
-import com.example.musala.services.events.services.EventService
+import com.example.musala.services.events.dtos.EventEntity
+import com.example.musala.services.events.repositories.EventRepository
 import com.example.musala.services.tickets.dtos.TicketApiRequest
 import com.example.musala.services.tickets.dtos.TicketEntity
 import com.example.musala.services.tickets.repositories.TicketRepository
@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
+import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -23,6 +24,29 @@ class TicketServiceImplTest {
     @Nested
     @DisplayName("reserve ticket")
     inner class ReverseTicket {
+        @Test
+        fun `for an in-existing event`() {
+            val eventRepository = mock(EventRepository::class.java)
+            val repository = mock(TicketRepository::class.java)
+            val service = TicketServiceImpl(
+                repository = repository,
+                eventRepository = eventRepository,
+            )
+
+            `when`(eventRepository.findForUpdateById(anyLong()))
+                .thenReturn(null)
+            val request = TicketApiRequest(attendeesCount = 1)
+
+            val error = assertThrows<MusalaException> {
+                service.reserveTicket(eventId = 3, request = request)
+            }
+
+            assertAll(
+                { assertEquals("EVENT_NOT_FOUND", error.errorCode) },
+                { assertEquals(HttpStatus.NOT_FOUND, error.statusCode) },
+            )
+        }
+
         @ParameterizedTest
         @CsvSource(
             "2,20,18",
@@ -33,25 +57,25 @@ class TicketServiceImplTest {
             availableAttendeesCount: Int,
             newAvailableAttendeesCount: Int,
         ) {
-            val eventService = mock(EventService::class.java)
+            val eventRepository = mock(EventRepository::class.java)
             val repository = mock(TicketRepository::class.java)
             val service = TicketServiceImpl(
                 repository = repository,
-                eventService = eventService,
+                eventRepository = eventRepository,
             )
 
             `when`(repository.save(any()))
                 .thenReturn(TicketEntity(id = 1))
-            `when`(eventService.findById(anyLong())).thenReturn(
-                EventApiResponse(
-                    id = 1,
-                    name = "Test",
-                    description = "Test",
-                    date = LocalDate.now(),
-                    availableAttendeesCount = availableAttendeesCount,
-                    category = EventCategory.entries.random(),
-                )
+            val eventEntity = EventEntity(
+                id = 3,
+                name = "Test",
+                description = "Test",
+                date = LocalDate.now(),
+                availableAttendeesCount = availableAttendeesCount,
+                category = EventCategory.entries.random(),
             )
+            `when`(eventRepository.findForUpdateById(anyLong()))
+                .thenReturn(eventEntity)
             val request = TicketApiRequest(attendeesCount = attendeesCount)
 
             val actual = service.reserveTicket(eventId = 3, request = request)
@@ -59,40 +83,45 @@ class TicketServiceImplTest {
             assertAll(
                 { assertNotNull(actual.id) },
                 {
-                    val eventIdCapture = argumentCaptor<Long>()
-                    val availableAttendeesCountCapture = argumentCaptor<Int>()
-                    verify(eventService).updateAvailableAttendeesCountById(
-                        eventIdCapture.capture(),
-                        availableAttendeesCountCapture.capture()
+                    val eventCapture = argumentCaptor<EventEntity>()
+                    verify(eventRepository).save(
+                        eventCapture.capture(),
                     )
 
-                    assertContentEquals(listOf(3), eventIdCapture.allValues)
-                    assertContentEquals(listOf(newAvailableAttendeesCount), availableAttendeesCountCapture.allValues)
+                    assertAll(
+                        { assertContentEquals(listOf(3), eventCapture.allValues.map { it.id }) },
+                        {
+                            assertContentEquals(
+                                listOf(newAvailableAttendeesCount),
+                                eventCapture.allValues.map { it.availableAttendeesCount },
+                            )
+                        },
+                    )
                 },
             )
         }
 
         @Test
         fun `update available attendees count happens despite ticket reservation failure`() {
-            val eventService = mock(EventService::class.java)
+            val eventRepository = mock(EventRepository::class.java)
             val repository = mock(TicketRepository::class.java)
             val service = TicketServiceImpl(
                 repository = repository,
-                eventService = eventService,
+                eventRepository = eventRepository,
             )
 
             `when`(repository.save(any()))
                 .thenThrow(RuntimeException::class.java)
-            `when`(eventService.findById(anyLong())).thenReturn(
-                EventApiResponse(
-                    id = 1,
-                    name = "Test",
-                    description = "Test",
-                    date = LocalDate.now(),
-                    availableAttendeesCount = 20,
-                    category = EventCategory.entries.random(),
-                )
+            val eventEntity = EventEntity(
+                id = 3,
+                name = "Test",
+                description = "Test",
+                date = LocalDate.now(),
+                availableAttendeesCount = 20,
+                category = EventCategory.entries.random(),
             )
+            `when`(eventRepository.findForUpdateById(anyLong()))
+                .thenReturn(eventEntity)
             val request = TicketApiRequest(attendeesCount = 2)
 
             assertThrows<RuntimeException> {
@@ -128,48 +157,63 @@ class TicketServiceImplTest {
                     )
                 },
                 {
-                    val eventIdCapture = argumentCaptor<Long>()
-                    val availableAttendeesCountCapture = argumentCaptor<Int>()
-                    verify(eventService).updateAvailableAttendeesCountById(
-                        eventIdCapture.capture(),
-                        availableAttendeesCountCapture.capture()
+                    val eventCapture = argumentCaptor<EventEntity>()
+                    verify(eventRepository).save(
+                        eventCapture.capture(),
+                    )
+
+                    assertAll(
+                        { assertContentEquals(listOf(3), eventCapture.allValues.map { it.id }) },
+                        {
+                            assertContentEquals(
+                                listOf(18),
+                                eventCapture.allValues.map { it.availableAttendeesCount },
+                            )
+                        },
                     )
                 },
             )
         }
 
-        @Test
-        fun `when attendee count is above available event attendee count`() {
-            val eventService = mock(EventService::class.java)
+        @ParameterizedTest
+        @CsvSource(
+            "0,EVENT_FULLY_BOOKED",
+            "10,TOO_MANY_ATTENDEES",
+        )
+        fun `when attendee count is above available event attendee count`(
+            availableAttendeesCount: Int,
+            expectedErrorCode: String,
+        ) {
+            val eventRepository = mock(EventRepository::class.java)
             val repository = mock(TicketRepository::class.java)
             val service = TicketServiceImpl(
                 repository = repository,
-                eventService = eventService,
+                eventRepository = eventRepository,
             )
 
-            `when`(eventService.findById(anyLong())).thenReturn(
-                EventApiResponse(
+            `when`(eventRepository.findForUpdateById(anyLong())).thenReturn(
+                EventEntity(
                     id = 1,
                     name = "Test",
                     description = "Test",
                     date = LocalDate.now(),
-                    availableAttendeesCount = 10,
+                    availableAttendeesCount = availableAttendeesCount,
                     category = EventCategory.entries.random(),
                 )
             )
             val request = TicketApiRequest(attendeesCount = 11)
 
-            assertThrows<MusalaException> {
+            val error = assertThrows<MusalaException> {
                 service.reserveTicket(eventId = 3, request = request)
             }
 
             assertAll(
+                { assertEquals(expectedErrorCode, error.errorCode) },
+                { assertEquals(HttpStatus.PRECONDITION_FAILED, error.statusCode) },
                 {
-                    val eventIdCapture = argumentCaptor<Long>()
-                    val availableAttendeesCountCapture = argumentCaptor<Int>()
-                    verify(eventService, never()).updateAvailableAttendeesCountById(
-                        eventIdCapture.capture(),
-                        availableAttendeesCountCapture.capture()
+                    val eventCapture = argumentCaptor<EventEntity>()
+                    verify(eventRepository, never()).save(
+                        eventCapture.capture(),
                     )
                 },
                 {
@@ -187,11 +231,11 @@ class TicketServiceImplTest {
     inner class FindById {
         @Test
         fun `for valid id`() {
-            val eventService = mock(EventService::class.java)
+            val eventRepository = mock(EventRepository::class.java)
             val repository = mock(TicketRepository::class.java)
             val service = TicketServiceImpl(
                 repository = repository,
-                eventService = eventService,
+                eventRepository = eventRepository,
             )
             `when`(repository.findByEvent_IdAndId(anyLong(), anyLong()))
                 .thenReturn(TicketEntity(id = 1))
@@ -203,28 +247,33 @@ class TicketServiceImplTest {
 
         @Test
         fun `for invalid id`() {
-            val eventService = mock(EventService::class.java)
+            val eventRepository = mock(EventRepository::class.java)
             val repository = mock(TicketRepository::class.java)
             val service = TicketServiceImpl(
                 repository = repository,
-                eventService = eventService,
+                eventRepository = eventRepository,
             )
             `when`(repository.findByEvent_IdAndId(anyLong(), anyLong()))
                 .thenReturn(null)
 
-            assertThrows<MusalaException> {
+            val error = assertThrows<MusalaException> {
                 service.findById(eventId = 3, ticketId = 1)
             }
+
+            assertAll(
+                { assertEquals("TICKET_NOT_FOUND", error.errorCode) },
+                { assertEquals(HttpStatus.NOT_FOUND, error.statusCode) },
+            )
         }
     }
 
     @Test
     fun `find all`() {
-        val eventService = mock(EventService::class.java)
+        val eventRepository = mock(EventRepository::class.java)
         val repository = mock(TicketRepository::class.java)
         val service = TicketServiceImpl(
             repository = repository,
-            eventService = eventService,
+            eventRepository = eventRepository,
         )
         `when`(repository.findAllByEvent_IdOrderByDateReservedAsc(eventId = 1))
             .thenReturn(listOf(TicketEntity(id = 1)))

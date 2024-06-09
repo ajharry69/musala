@@ -33,12 +33,12 @@ class TicketControllerTest(
     @Autowired private val userRepository: UserRepository,
 ) : BaseIntegrationTest(userRepository = userRepository) {
     lateinit var event: EventEntity
+    lateinit var fullyBookedEvent: EventEntity
 
     @BeforeEach
     fun setUp() {
         RestAssured.port = RestAssured.DEFAULT_PORT
 
-//        repository.deleteAll()
         eventRepository.deleteAll()
 
         event = eventRepository.save(
@@ -47,7 +47,16 @@ class TicketControllerTest(
                 description = "Test description for Musala Engineering event.",
                 date = LocalDate.now().plusMonths(5),
                 category = EventCategory.Conference,
-                availableAttendeesCount = 100,
+                availableAttendeesCount = 38,
+            )
+        )
+        fullyBookedEvent = eventRepository.save(
+            EventEntity(
+                name = "Musala Engineering Fully Booked",
+                description = "Test description for Musala Engineering event.",
+                date = LocalDate.now().plusMonths(5),
+                category = EventCategory.entries.random(),
+                availableAttendeesCount = 0,
             )
         )
         repository.save(
@@ -157,7 +166,7 @@ class TicketControllerTest(
         @CsvSource(
             "-1,400,VALIDATION_ERROR",
             "0,400,VALIDATION_ERROR",
-            "1001,412,EVENT_FULLY_BOOKED",
+            "39,412,TOO_MANY_ATTENDEES",
         )
         fun `with invalid request body`(attendeesCount: Int, expectedStatusCode: Int, expectedErrorCode: String) {
             given()
@@ -169,6 +178,22 @@ class TicketControllerTest(
                 .then()
                 .statusCode(expectedStatusCode)
                 .body("errorCode", equalTo(expectedErrorCode))
+
+            assertThat(repository.count())
+                .isEqualTo(3)
+        }
+
+        @Test
+        fun `should report fully booked`() {
+            given()
+                .auth().preemptive().oauth2(getAccessToken())
+                .contentType(ContentType.JSON)
+                .body("""{"attendeesCount": 39}""")
+                .post("/events/${fullyBookedEvent.id}/tickets")
+                .apply { prettyPrint() }
+                .then()
+                .statusCode(412)
+                .body("errorCode", equalTo("EVENT_FULLY_BOOKED"))
 
             assertThat(repository.count())
                 .isEqualTo(3)

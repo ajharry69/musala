@@ -9,9 +9,9 @@ import com.example.musala.services.events.repositories.EventRepository
 import org.junit.jupiter.api.*
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
+import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.util.*
-import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -57,9 +57,14 @@ class EventServiceImplTest {
             `when`(repository.findById(any()))
                 .thenReturn(Optional.ofNullable(null))
 
-            assertThrows<MusalaException> {
+            val error = assertThrows<MusalaException> {
                 service.findById(eventId = 1)
             }
+
+            assertAll(
+                { assertEquals("EVENT_NOT_FOUND", error.errorCode) },
+                { assertEquals(HttpStatus.NOT_FOUND, error.statusCode) },
+            )
         }
     }
 
@@ -79,29 +84,6 @@ class EventServiceImplTest {
                 verify(repository)
                     .findAll(specCapture.capture())
             },
-        )
-    }
-
-    @Test
-    fun `update available attendees count by id`() {
-        val repository = mock(EventRepository::class.java)
-        val service = EventServiceImpl(repository = repository)
-
-        service.updateAvailableAttendeesCountById(
-            eventId = 1,
-            availableAttendeesCount = 20,
-        )
-
-        val availableAttendeesCountCapture = argumentCaptor<Int>()
-        val eventIdCapture = argumentCaptor<Long>()
-        verify(repository).updateAvailableAttendeesCountById(
-            availableAttendeesCountCapture.capture(),
-            eventIdCapture.capture(),
-        )
-
-        assertAll(
-            { assertContentEquals(listOf(1), eventIdCapture.allValues) },
-            { assertContentEquals(listOf(20), availableAttendeesCountCapture.allValues) },
         )
     }
 }

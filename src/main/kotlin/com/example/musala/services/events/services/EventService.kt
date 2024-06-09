@@ -8,5 +8,4 @@ interface EventService {
     fun createEvent(request: EventApiRequest): EventApiResponse
     fun findById(eventId: Long): EventApiResponse
     fun findAll(filters: EventFilters): List<EventApiResponse>
-    fun updateAvailableAttendeesCountById(eventId: Long, availableAttendeesCount: Int)
 }

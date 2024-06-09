@@ -2,7 +2,7 @@ package com.example.musala.services.tickets.services
 
 import com.example.musala.MusalaException
 import com.example.musala.services.events.dtos.EventEntity
-import com.example.musala.services.events.services.EventService
+import com.example.musala.services.events.repositories.EventRepository
 import com.example.musala.services.tickets.dtos.TicketApiRequest
 import com.example.musala.services.tickets.dtos.TicketApiResponse
 import com.example.musala.services.tickets.dtos.toApiResponse
@@ -14,22 +14,24 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class TicketServiceImpl(
-    private val eventService: EventService,
     private val repository: TicketRepository,
+    private val eventRepository: EventRepository,
 ) : TicketService {
     @Transactional
     override fun reserveTicket(eventId: Long, request: TicketApiRequest): TicketApiResponse {
-        val event = eventService.findById(eventId = eventId)
+        val event = eventRepository.findForUpdateById(id = eventId)
+            ?: throw MusalaException(HttpStatus.NOT_FOUND, errorCode = "EVENT_NOT_FOUND")
 
-        if (request.attendeesCount > event.availableAttendeesCount) {
+        if (event.availableAttendeesCount == 0) {
             throw MusalaException(HttpStatus.PRECONDITION_FAILED, errorCode = "EVENT_FULLY_BOOKED")
         }
 
-        val availableAttendeesCount = event.availableAttendeesCount - request.attendeesCount
-        eventService.updateAvailableAttendeesCountById(
-            eventId = eventId,
-            availableAttendeesCount = availableAttendeesCount,
-        )
+        if (request.attendeesCount > event.availableAttendeesCount) {
+            throw MusalaException(HttpStatus.PRECONDITION_FAILED, errorCode = "TOO_MANY_ATTENDEES")
+        }
+
+        event.availableAttendeesCount -= request.attendeesCount
+        eventRepository.save(event)
 
         val entity = request.toEntity().apply {
             this.event = EventEntity(
