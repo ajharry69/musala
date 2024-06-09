@@ -8,6 +8,7 @@ import io.restassured.http.ContentType
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,20 +26,33 @@ class AuthenticationControllerTest(
         getOrCreateUser(email = "test@example.org", password = "password")
     }
 
+    @Test
+    fun `successful authentication`() {
+        given()
+            .contentType(ContentType.JSON)
+            .body(mapOf("email" to "test@example.org", "password" to "password"))
+            .apply { log() }
+            .post("/auth")
+            .apply { prettyPrint() }
+            .then().assertThat().statusCode(200)
+            .header("Authorization", notNullValue())
+            .body("accessToken", notNullValue())
+    }
+
     @ParameterizedTest
     @CsvSource(
-        "test@example.org,password,200,true",
-        "test@example.org,invalid-password,401,false",
-        "unknown.user@example.org,password,401,false",
+        "test@example.org,invalid-password,401",
+        "unknown.user@example.org,password,401",
     )
-    fun authenticate(email: String, password: String, expectedStatusCode: Int, hasAccessToken: Boolean) {
+    fun `failed authentication`(email: String, password: String) {
         given()
             .contentType(ContentType.JSON)
             .body(mapOf("email" to email, "password" to password))
             .apply { log() }
             .post("/auth")
             .apply { prettyPrint() }
-            .then().assertThat().statusCode(expectedStatusCode)
-            .body("accessToken", if (hasAccessToken) notNullValue() else nullValue())
+            .then().assertThat().statusCode(401)
+            .header("Authorization", nullValue())
+            .body("accessToken", nullValue())
     }
 }
