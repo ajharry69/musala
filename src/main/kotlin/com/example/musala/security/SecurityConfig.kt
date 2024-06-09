@@ -9,6 +9,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -35,7 +36,7 @@ class SecurityConfig {
         jwtService: JwtService,
         userDetailsService: UserDetailsService,
     ): SecurityFilterChain {
-        val authenticationProvider = DaoAuthenticationProvider().apply {
+        val authProvider = DaoAuthenticationProvider().apply {
             setPasswordEncoder(passwordEncoder())
             setUserDetailsService(userDetailsService)
         }
@@ -44,16 +45,22 @@ class SecurityConfig {
             userDetailsService = userDetailsService,
         )
         http
-            .csrf { it.disable() }
-            .authorizeHttpRequests { req ->
-                req.requestMatchers(HttpMethod.POST, "/auth", "/users")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated()
+            .authenticationProvider(authProvider)
+        http {
+            csrf {
+                disable()
             }
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
-            .authenticationProvider(authenticationProvider)
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            authorizeRequests {
+                authorize(HttpMethod.POST, "/auth", permitAll)
+                authorize(HttpMethod.POST, "/users", permitAll)
+                authorize(HttpMethod.GET, "/events", permitAll)
+                authorize(anyRequest, authenticated)
+            }
+            sessionManagement {
+                sessionCreationPolicy = SessionCreationPolicy.STATELESS
+            }
+            addFilterBefore<UsernamePasswordAuthenticationFilter>(jwtAuthenticationFilter)
+        }
 
         return http.build()
     }
