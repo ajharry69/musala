@@ -291,6 +291,27 @@ class EventControllerTest(
                 .isEqualTo(4)
         }
 
+        @Test
+        fun `unauthenticated request`() {
+            val eventDate = LocalDate.now().plusWeeks(1).toString()
+            given()
+                .contentType(ContentType.JSON)
+                .body(
+                    """{
+                      "name": "Test",
+                      "date": "$eventDate",
+                      "availableAttendeesCount": 100,
+                      "description": "Test description",
+                      "category": "Game"
+                    }""".trimIndent(),
+                )
+                .post("/events")
+                .apply { prettyPrint() }
+                .then()
+                .statusCode(HttpStatus.UNAUTHORIZED.value())
+                .header(HttpHeaders.WWW_AUTHENTICATE, equalTo("Bearer token68"))
+        }
+
         @ParameterizedTest
         @ArgumentsSource(InvalidEventApiRequestProvider::class)
         fun `with invalid request body`(data: Pair<EventApiRequest, Int>) {

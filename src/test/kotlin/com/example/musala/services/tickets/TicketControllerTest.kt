@@ -211,6 +211,18 @@ class TicketControllerTest(
         }
 
         @Test
+        fun `unauthenticated request`() {
+            given()
+                .contentType(ContentType.JSON)
+                .body("""{"attendeesCount": 1}""")
+                .post("/events/${event.id}/tickets")
+                .apply { prettyPrint() }
+                .then()
+                .statusCode(HttpStatus.UNAUTHORIZED.value())
+                .header(HttpHeaders.WWW_AUTHENTICATE, equalTo("Bearer token68"))
+        }
+
+        @Test
         fun `should report fully booked`() {
             given()
                 .auth().preemptive().oauth2(getAccessToken())
