@@ -4,6 +4,33 @@
 
 ---
 
+## About the Implementation
+
+To run the application, a few things are needed:
+
+1. JDK 17.
+2. [Docker installation](https://docs.docker.com/engine/install/) — for starting the database server and running the tests using [Test Containers](https://testcontainers.com/).
+
+### Building the application
+
+```shell
+./gradlew build --exclude-task test
+```
+
+### Running the tests
+
+```shell
+./gradlew test --rerun-tasks
+```
+
+### Running the server
+
+```shell
+./gradlew bootTestRun
+```
+
+---
+
 :scroll: **START**
 
 ## Introduction
