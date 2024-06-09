@@ -34,6 +34,7 @@ class TicketControllerTest(
 ) : BaseIntegrationTest(userRepository = userRepository) {
     lateinit var event: EventEntity
     lateinit var fullyBookedEvent: EventEntity
+    lateinit var cancellableTicket: TicketEntity
 
     @BeforeEach
     fun setUp() {
@@ -59,7 +60,7 @@ class TicketControllerTest(
                 availableAttendeesCount = 0,
             )
         )
-        repository.save(
+        cancellableTicket = repository.save(
             TicketEntity(
                 attendeesCount = 10,
                 event = event,
@@ -112,7 +113,33 @@ class TicketControllerTest(
                 .statusCode(HttpStatus.OK.value())
                 .body("id", greaterThan(0))
                 .body("attendeesCount", greaterThan(0))
+                .body("status", equalTo(TicketStatus.Confirmed.name))
                 .body("_links.tickets.href", allOf(startsWith("http"), endsWith("/tickets")))
+                .body("_links.cancel-ticket.href", allOf(startsWith("http"), endsWith("/tickets/${ticket.id}/cancel")))
+                .body("_links.self.href", allOf(startsWith("http")))
+        }
+
+        @Test
+        fun `for a cancelled ticket`() {
+            val ticket = repository.save(
+                TicketEntity(
+                    attendeesCount = 7,
+                    event = event,
+                    status = TicketStatus.Cancelled,
+                )
+            )
+
+            given()
+                .auth().preemptive().oauth2(getAccessToken())
+                .get("/events/${event.id}/tickets/${ticket.id}")
+                .apply { prettyPrint() }
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("id", greaterThan(0))
+                .body("attendeesCount", greaterThan(0))
+                .body("status", equalTo(TicketStatus.Cancelled.name))
+                .body("_links.tickets.href", allOf(startsWith("http"), endsWith("/tickets")))
+                .body("_links.cancel-ticket.href", nullValue())
                 .body("_links.self.href", allOf(startsWith("http")))
         }
 
@@ -198,5 +225,15 @@ class TicketControllerTest(
             assertThat(repository.count())
                 .isEqualTo(3)
         }
+    }
+
+    @Test
+    fun `should cancel ticket`() {
+        given()
+            .auth().preemptive().oauth2(getAccessToken())
+            .delete("/events/${event.id}/tickets/${cancellableTicket.id}/cancel")
+            .apply { prettyPrint() }
+            .then()
+            .statusCode(HttpStatus.NO_CONTENT.value())
     }
 }

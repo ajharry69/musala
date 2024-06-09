@@ -1,6 +1,7 @@
 package com.example.musala.services.tickets.dtos
 
 import com.example.musala.services.events.dtos.EventEntity
+import com.example.musala.services.tickets.TicketStatus
 import com.example.musala.services.users.dtos.UserEntity
 import jakarta.persistence.*
 import org.springframework.data.annotation.CreatedBy
@@ -21,6 +22,8 @@ class TicketEntity(
     @ManyToOne(optional = false, cascade = [CascadeType.REMOVE])
     var event: EventEntity? = null,
     var notified: Boolean = false,
+    @Enumerated(value = EnumType.STRING)
+    var status: TicketStatus = TicketStatus.Confirmed,
     @CreatedBy
     @JoinColumn(updatable = false)
     @ManyToOne(cascade = [CascadeType.REMOVE])

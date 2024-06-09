@@ -4,6 +4,7 @@ import com.example.musala.MusalaException
 import com.example.musala.services.events.dtos.EventCategory
 import com.example.musala.services.events.dtos.EventEntity
 import com.example.musala.services.events.repositories.EventRepository
+import com.example.musala.services.tickets.TicketStatus
 import com.example.musala.services.tickets.dtos.TicketApiRequest
 import com.example.musala.services.tickets.dtos.TicketEntity
 import com.example.musala.services.tickets.repositories.TicketRepository
@@ -220,6 +221,251 @@ class TicketServiceImplTest {
                     val entityCapture = argumentCaptor<TicketEntity>()
                     verify(repository, never()).save(
                         entityCapture.capture()
+                    )
+                },
+            )
+        }
+    }
+
+    @Nested
+    @DisplayName("cancel ticket")
+    inner class CancelTicket {
+        @Test
+        fun `for an in-existing event`() {
+            val eventRepository = mock(EventRepository::class.java)
+            val repository = mock(TicketRepository::class.java)
+            val service = TicketServiceImpl(
+                repository = repository,
+                eventRepository = eventRepository,
+            )
+
+            `when`(eventRepository.findForUpdateById(anyLong()))
+                .thenReturn(null)
+
+            val error = assertThrows<MusalaException> {
+                service.cancelTicket(eventId = 3, ticketId = 1)
+            }
+
+            assertAll(
+                { assertEquals("EVENT_NOT_FOUND", error.errorCode) },
+                { assertEquals(HttpStatus.NOT_FOUND, error.statusCode) },
+            )
+        }
+
+        @Test
+        fun `for an in-existing ticket`() {
+            val eventRepository = mock(EventRepository::class.java)
+            val repository = mock(TicketRepository::class.java)
+            val service = TicketServiceImpl(
+                repository = repository,
+                eventRepository = eventRepository,
+            )
+
+            `when`(eventRepository.findForUpdateById(anyLong())).thenReturn(
+                EventEntity(
+                    id = 3,
+                    name = "Test",
+                    description = "Test",
+                    date = LocalDate.now(),
+                    category = EventCategory.entries.random(),
+                )
+            )
+
+            `when`(repository.findForUpdateById(anyLong()))
+                .thenReturn(null)
+
+            val error = assertThrows<MusalaException> {
+                service.cancelTicket(eventId = 3, ticketId = 1)
+            }
+
+            assertAll(
+                { assertEquals("TICKET_NOT_FOUND", error.errorCode) },
+                { assertEquals(HttpStatus.NOT_FOUND, error.statusCode) },
+            )
+        }
+
+
+        @Test
+        fun `for mismatched ticket and event ids`() {
+            val eventRepository = mock(EventRepository::class.java)
+            val repository = mock(TicketRepository::class.java)
+            val service = TicketServiceImpl(
+                repository = repository,
+                eventRepository = eventRepository,
+            )
+
+            `when`(eventRepository.findForUpdateById(anyLong())).thenReturn(
+                EventEntity(
+                    id = 3,
+                    name = "Test",
+                    description = "Test",
+                    date = LocalDate.now(),
+                    category = EventCategory.entries.random(),
+                )
+            )
+
+            `when`(repository.findForUpdateById(anyLong()))
+                .thenReturn(TicketEntity(id = 1, event = EventEntity(id = 4)))
+
+            val error = assertThrows<MusalaException> {
+                service.cancelTicket(eventId = 3, ticketId = 1)
+            }
+
+            assertAll(
+                { assertEquals("SUSPICIOUS_TICKET_CANCELLATION_OPERATION", error.errorCode) },
+                { assertEquals(HttpStatus.PRECONDITION_FAILED, error.statusCode) },
+            )
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "2,18,20",
+            "20,0,20",
+        )
+        fun `when attendee count is within available event attendee count`(
+            attendeesCount: Int,
+            availableAttendeesCount: Int,
+            newAvailableAttendeesCount: Int,
+        ) {
+            val eventRepository = mock(EventRepository::class.java)
+            val repository = mock(TicketRepository::class.java)
+            val service = TicketServiceImpl(
+                repository = repository,
+                eventRepository = eventRepository,
+            )
+
+            val eventEntity = EventEntity(
+                id = 3,
+                name = "Test",
+                description = "Test",
+                date = LocalDate.now(),
+                availableAttendeesCount = availableAttendeesCount,
+                category = EventCategory.entries.random(),
+            )
+            `when`(eventRepository.findForUpdateById(anyLong()))
+                .thenReturn(eventEntity)
+            `when`(repository.findForUpdateById(anyLong()))
+                .thenReturn(TicketEntity(id = 1, attendeesCount = attendeesCount, event = eventEntity))
+
+            service.cancelTicket(eventId = 3, ticketId = 1)
+
+            assertAll(
+                {
+                    val eventCapture = argumentCaptor<EventEntity>()
+                    verify(eventRepository)
+                        .save(eventCapture.capture())
+
+                    assertAll(
+                        { assertContentEquals(listOf(3), eventCapture.allValues.map { it.id }) },
+                        {
+                            assertContentEquals(
+                                listOf(newAvailableAttendeesCount),
+                                eventCapture.allValues.map { it.availableAttendeesCount },
+                            )
+                        },
+                    )
+                },
+                {
+                    val ticketCapture = argumentCaptor<TicketEntity>()
+                    verify(repository)
+                        .save(ticketCapture.capture())
+
+                    assertAll(
+                        { assertContentEquals(listOf(1), ticketCapture.allValues.map { it.id }) },
+                        {
+                            assertContentEquals(
+                                listOf(attendeesCount),
+                                ticketCapture.allValues.map { it.attendeesCount },
+                            )
+                        },
+                        {
+                            assertContentEquals(
+                                listOf(TicketStatus.Cancelled),
+                                ticketCapture.allValues.map { it.status },
+                            )
+                        },
+                    )
+                },
+            )
+        }
+
+        @Test
+        fun `update available attendees count happens despite ticket cancellation failure`() {
+            val eventRepository = mock(EventRepository::class.java)
+            val repository = mock(TicketRepository::class.java)
+            val service = TicketServiceImpl(
+                repository = repository,
+                eventRepository = eventRepository,
+            )
+
+            `when`(repository.save(any()))
+                .thenThrow(RuntimeException::class.java)
+
+            val eventEntity = EventEntity(
+                id = 3,
+                name = "Test",
+                description = "Test",
+                date = LocalDate.now(),
+                availableAttendeesCount = 20,
+                category = EventCategory.entries.random(),
+            )
+            `when`(eventRepository.findForUpdateById(anyLong()))
+                .thenReturn(eventEntity)
+            `when`(repository.findForUpdateById(anyLong()))
+                .thenReturn(TicketEntity(id = 1, attendeesCount = 2, event = eventEntity))
+
+            assertThrows<RuntimeException> {
+                service.cancelTicket(eventId = 3, ticketId = 1)
+            }
+
+            assertAll(
+                {
+                    val entityCapture = argumentCaptor<TicketEntity>()
+                    verify(repository).save(
+                        entityCapture.capture(),
+                    )
+
+                    assertAll(
+                        {
+                            assertContentEquals(
+                                listOf(1),
+                                entityCapture.allValues.map { it.id },
+                            )
+                        },
+                        {
+                            assertContentEquals(
+                                listOf(2),
+                                entityCapture.allValues.map { it.attendeesCount },
+                            )
+                        },
+                        {
+                            assertContentEquals(
+                                listOf(TicketStatus.Cancelled),
+                                entityCapture.allValues.map { it.status },
+                            )
+                        },
+                        {
+                            assertEquals(
+                                1,
+                                entityCapture.allValues.mapNotNull { it.event }.size,
+                            )
+                        },
+                    )
+                },
+                {
+                    val eventCapture = argumentCaptor<EventEntity>()
+                    verify(eventRepository).save(
+                        eventCapture.capture(),
+                    )
+
+                    assertAll(
+                        { assertContentEquals(listOf(3), eventCapture.allValues.map { it.id }) },
+                        {
+                            assertContentEquals(
+                                listOf(22),
+                                eventCapture.allValues.map { it.availableAttendeesCount },
+                            )
+                        },
                     )
                 },
             )

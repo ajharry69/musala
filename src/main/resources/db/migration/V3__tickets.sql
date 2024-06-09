@@ -1,10 +1,11 @@
 CREATE TABLE IF NOT EXISTS tickets
 (
     id              BIGSERIAL PRIMARY KEY,
-    attendees_count INTEGER NOT NULL,
-    notified        BOOLEAN NOT NULL DEFAULT false,
-    event_id        BIGINT  NOT NULL,
-    reserved_by_id  UUID             DEFAULT null,
+    attendees_count INTEGER     NOT NULL,
+    status          VARCHAR(20) NOT NULL,
+    notified        BOOLEAN     NOT NULL DEFAULT false,
+    event_id        BIGINT      NOT NULL,
+    reserved_by_id  UUID                 DEFAULT null,
     date_reserved   TIMESTAMP WITH TIME ZONE,
     FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
     FOREIGN KEY (reserved_by_id) REFERENCES users (id) ON DELETE SET NULL

@@ -16,6 +16,10 @@ class TicketAssembler(private val eventId: Long) :
             linkTo<TicketController> {
                 findAll(eventId = eventId)
             }.withRel("tickets"),
-        )
+        ).addIf(entity.status == TicketStatus.Confirmed) {
+            linkTo<TicketController> {
+                cancelTicket(eventId = eventId, ticketId = entity.id)
+            }.withRel("cancel-ticket")
+        }
     }
 }

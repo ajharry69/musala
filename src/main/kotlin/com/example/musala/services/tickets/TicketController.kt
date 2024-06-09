@@ -28,6 +28,19 @@ class TicketController(private val service: TicketService) {
             .body(entityModel)
     }
 
+    @DeleteMapping("/{eventId}/tickets/{ticketId}/cancel")
+    fun cancelTicket(
+        @PathVariable eventId: Long,
+        @PathVariable ticketId: Long,
+    ): ResponseEntity<*> {
+        service.cancelTicket(
+            eventId = eventId,
+            ticketId = ticketId,
+        )
+        return ResponseEntity.noContent()
+            .build<Any>()
+    }
+
     @GetMapping("/{eventId}/tickets/{ticketId}")
     fun findById(
         @PathVariable eventId: Long,

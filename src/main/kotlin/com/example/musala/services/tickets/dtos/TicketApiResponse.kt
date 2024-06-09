@@ -1,6 +1,6 @@
 package com.example.musala.services.tickets.dtos
 
-import jakarta.validation.constraints.Min
+import com.example.musala.services.tickets.TicketStatus
 import java.io.Serializable
 
 /**
@@ -8,6 +8,6 @@ import java.io.Serializable
  */
 data class TicketApiResponse(
     val id: Long,
-    @field:Min(1L)
-    val attendeesCount: Int = 1,
+    val attendeesCount: Int,
+    val status: TicketStatus,
 ) : Serializable

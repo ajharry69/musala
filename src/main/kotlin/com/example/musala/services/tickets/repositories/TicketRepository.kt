@@ -22,4 +22,13 @@ interface TicketRepository : JpaRepository<TicketEntity, Long> {
     )
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     fun findTop50ByNotifiedFalseAndEvent_DateBetween(dateStart: LocalDate, dateEnd: LocalDate): List<TicketEntity>
+
+    @QueryHints(
+        QueryHint(
+            name = "jakarta.persistence.lock.timeout",
+            value = "-2",
+        ),
+    )
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    fun findForUpdateById(id: Long): TicketEntity?
 }
