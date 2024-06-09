@@ -7,6 +7,7 @@ import com.example.musala.services.events.dtos.EventApiResponse
 import com.example.musala.services.events.dtos.toApiResponse
 import com.example.musala.services.events.dtos.toEntity
 import com.example.musala.services.events.repositories.EventRepository
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -25,7 +26,7 @@ class EventServiceImpl(private val repository: EventRepository) : EventService {
 
     override fun findAll(filters: EventFilters): List<EventApiResponse> {
         val specification = EventSpecification(filters = filters)
-        return repository.findAll(specification).map {
+        return repository.findAll(specification, Sort.by(Sort.Order.asc("date"))).map {
             it.toApiResponse()
         }
     }
