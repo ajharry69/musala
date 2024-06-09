@@ -1,0 +1,14 @@
+application:
+  jobs:
+    send-event-notification:
+      cron: 0 0 9 * * ?
+spring:
+  application:
+    name: musala
+  jpa:
+    properties:
+      hibernate:
+        order_inserts: true
+        order_updates: true
+        jdbc:
+          batch_size: 50

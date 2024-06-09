@@ -6,6 +6,7 @@ import org.springframework.hateoas.mediatype.problem.Problem
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -52,6 +53,29 @@ object MusalaHttpExceptionHandler {
             .withInstance(URI.create(request.requestURI))
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+            .body(problem)
+    }
+
+
+    @ResponseBody
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    operator fun invoke(
+        exception: HttpMessageNotReadableException,
+        request: HttpServletRequest
+    ): ResponseEntity<Problem> {
+        val problem = Problem.create()
+            .withStatus(HttpStatus.BAD_REQUEST)
+            .withProperties(
+                buildMap {
+                    put("timestamp", Instant.now())
+                    put("errorCode", "INVALID_REQUEST_ERROR")
+                },
+            )
+            .withDetail(exception.localizedMessage)
+            .withInstance(URI.create(request.requestURI))
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
             .body(problem)
     }

@@ -1,0 +1,7 @@
+application:
+  jobs:
+    send-event-notification:
+      cron: 0 * * ? * *
+spring:
+  jpa:
+    show-sql: true

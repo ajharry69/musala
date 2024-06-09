@@ -20,6 +20,7 @@ class TicketEntity(
     var attendeesCount: Int = 1,
     @ManyToOne(optional = false, cascade = [CascadeType.REMOVE])
     var event: EventEntity? = null,
+    var notified: Boolean = false,
     @CreatedBy
     @JoinColumn(updatable = false)
     @ManyToOne(cascade = [CascadeType.REMOVE])
